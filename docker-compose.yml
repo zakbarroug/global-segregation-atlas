@@ -1,0 +1,35 @@
+services:
+  api:
+    build:
+      context: ./apps/api
+    env_file: .env
+    environment:
+      PYTHONDONTWRITEBYTECODE: '1'
+    ports: ['127.0.0.1:8000:8000']
+    read_only: true
+    tmpfs: ['/tmp:size=32m']
+    mem_limit: 1g
+    cpus: 2
+    security_opt: ['no-new-privileges:true']
+    cap_drop: [ALL]
+    healthcheck:
+      test: ['CMD', 'python', '-c', "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+  web:
+    build:
+      context: ./apps/web
+    environment:
+      API_INTERNAL_URL: http://api:8000
+      MAP_STYLE_URL: ${MAP_STYLE_URL:-}
+      NEXT_TELEMETRY_DISABLED: '1'
+    ports: ['127.0.0.1:3000:3000']
+    depends_on:
+      api:
+        condition: service_healthy
+    read_only: true
+    tmpfs: ['/tmp:size=32m']
+    mem_limit: 512m
+    security_opt: ['no-new-privileges:true']
+    cap_drop: [ALL]
